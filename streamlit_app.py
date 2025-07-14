@@ -66,28 +66,42 @@ if uploaded_file is not None:
                 top_roi = results.sort_values(by="estimated_roi", ascending=False)
                 top_contribution = results.sort_values(by="normalized_contribution", ascending=False)
 
-                # Best and worst channels
+                # Get best and worst
                 best_channel = top_roi.iloc[0]['media_channel']
                 best_roi = top_roi.iloc[0]['estimated_roi']
                 worst_channel = top_roi.iloc[-1]['media_channel']
                 worst_roi = top_roi.iloc[-1]['estimated_roi']
 
-                # Low ROI & high contribution
-                low_roi_channels = results[results["estimated_roi"] < 1]
-                high_contribution_channels = results[results["normalized_contribution"] > 0.15]
+                # Low ROI channels (arbitrary threshold: <1.0)
+                low_roi_channels = results[results["estimated_roi"] < 1.0]["media_channel"].tolist()
+                high_contrib_channels = results[results["normalized_contribution"] > 0.15]["media_channel"].tolist()
 
-                # Generate summary
+                # ✅ Always show best/worst
                 st.markdown(f"""
-                - ✅ **Most efficient channel:** `{best_channel}` with ROI of **{best_roi:.2f}**
-                - 🚫 **Least efficient channel:** `{worst_channel}` with ROI of **{worst_roi:.2f}**
-                - 🔍 **Low ROI channels:** {", ".join(low_roi_channels["media_channel"].tolist()) if not low_roi_channels.empty else "None"}
-                - 🔝 **Top contribution channels (>15%)**: {", ".join(high_contribution_channels["media_channel"].tolist()) if not high_contribution_channels.empty else "None"}
+                - ✅ **Most efficient channel:** `{best_channel}` with an estimated ROI of **{best_roi:.2f}**
+                - 🚫 **Least efficient channel:** `{worst_channel}` with an ROI of **{worst_roi:.2f}**
                 """)
 
+                # 🔍 Show low ROI if any
+                if low_roi_channels:
+                    st.markdown(f"- ⚠️ **Channels with ROI < 1.0:** {', '.join(low_roi_channels)}")
+                else:
+                    st.markdown("- ✅ No channels have ROI below 1.0 — good efficiency overall.")
+
+                # 🔝 Show high contributors
+                if high_contrib_channels:
+                    st.markdown(f"- 🔝 **Top contributors (>15%)**: {', '.join(high_contrib_channels)}")
+                else:
+                    st.markdown("- ℹ️ No channel has a contribution >15%")
+
+                # 📌 Recommendation summary
                 st.info(f"""
                 📌 **Recommendation:**
-                Consider reallocating budget from `{worst_channel}` to `{best_channel}` or other high-performing channels.
-                Monitor low ROI channels and adjust investment accordingly.
+
+                Focus more on `{best_channel}` due to its high ROI (**{best_roi:.2f}**).
+                Consider reallocating part of the budget from `{worst_channel}` (ROI: **{worst_roi:.2f}**) if needed.
+
+                {"Monitor " + ", ".join(low_roi_channels) + " closely as they are below break-even ROI." if low_roi_channels else "Continue to monitor all channels to sustain high ROI."}
                 """)
 
                 # 📊 Chart 1: Normalized Contribution
