@@ -24,58 +24,71 @@ if uploaded_file is not None:
         "Google Ads Spend (INR)"
     ]
 
+    # Match those columns with what's in the uploaded CSV
     media_cols = [col for col in expected_media_cols if col in df.columns]
     target = "revenue"
 
-    # Check for necessary columns
+    # Check for required columns
     if not media_cols:
         st.error("❌ No media spend columns found. Please check column names in your file.")
     elif target not in df.columns:
         st.error("❌ 'revenue' column is missing. Please add a column named exactly 'revenue'.")
     else:
         try:
-            # Run the model
-            results = run_meridian_model(df, media_cols, target)
-            st.subheader("📈 MMM Results Table")
-            st.dataframe(results)
+            # ✅ DEBUGGING: Show selected columns
+            st.write("✅ Media columns being used:", media_cols)
+            st.write("✅ Target column:", target)
 
-            # 📊 Chart 1: Normalized Contribution
-            st.subheader("📊 Normalized Contribution by Media Channel")
-            fig1 = px.bar(
-                results,
-                x='media_channel',
-                y='normalized_contribution',
-                title="Media Contribution to Revenue",
-                labels={'normalized_contribution': 'Normalized Contribution'},
-                color='media_channel'
-            )
-            st.plotly_chart(fig1)
+            # Prepare input data
+            X = df[media_cols]
+            y = df[target]
 
-            # 📉 Chart 2: Estimated ROI
-            st.subheader("📉 Estimated ROI by Media Channel")
-            fig2 = px.bar(
-                results,
-                x='media_channel',
-                y='estimated_roi',
-                title="ROI per Media Channel",
-                labels={'estimated_roi': 'Estimated ROI'},
-                color='media_channel'
-            )
-            st.plotly_chart(fig2)
+            st.write("✅ Shape of X (media input):", X.shape)
+            st.write("✅ Shape of y (target):", y.shape)
 
-            # 📥 Export Button
-            st.subheader("📥 Export Results")
-            csv = results.to_csv(index=False).encode('utf-8')
-            st.download_button(
-                label="Download Results as CSV",
-                data=csv,
-                file_name='mmm_results.csv',
-                mime='text/csv',
-            )
+            if X.empty or y.empty:
+                st.error("❌ Input data is empty. Check if your media or revenue columns have missing values or incorrect names.")
+            else:
+                # Run the MMM model
+                results = run_meridian_model(df, media_cols, target)
+                st.subheader("📈 MMM Results Table")
+                st.dataframe(results)
+
+                # 📊 Chart 1: Normalized Contribution
+                st.subheader("📊 Normalized Contribution by Media Channel")
+                fig1 = px.bar(
+                    results,
+                    x='media_channel',
+                    y='normalized_contribution',
+                    title="Media Contribution to Revenue",
+                    labels={'normalized_contribution': 'Normalized Contribution'},
+                    color='media_channel'
+                )
+                st.plotly_chart(fig1)
+
+                # 📉 Chart 2: Estimated ROI
+                st.subheader("📉 Estimated ROI by Media Channel")
+                fig2 = px.bar(
+                    results,
+                    x='media_channel',
+                    y='estimated_roi',
+                    title="ROI per Media Channel",
+                    labels={'estimated_roi': 'Estimated ROI'},
+                    color='media_channel'
+                )
+                st.plotly_chart(fig2)
+
+                # 📥 Export Button
+                st.subheader("📥 Export Results")
+                csv = results.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label="Download Results as CSV",
+                    data=csv,
+                    file_name='mmm_results.csv',
+                    mime='text/csv',
+                )
 
         except Exception as e:
             st.error(f"❌ Model failed to run: {e}")
 else:
     st.info("⬆️ Please upload a CSV file to get started.")
-
-  
