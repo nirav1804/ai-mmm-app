@@ -13,43 +13,49 @@ if uploaded_file is not None:
     st.success("✅ File Uploaded Successfully")
     st.dataframe(df.head())
 
-    # Define expected media columns
+    # ✅ Column Debug
+    st.write("📂 Columns in uploaded file:")
+    st.write(df.columns.tolist())
+
+    # ✅ Corrected media spend columns based on actual file
     expected_media_cols = [
-        "TV Spend (INR)",
-        "Print Spend (INR)",
-        "Outdoor Spend (INR)",
-        "Cinema Spend (INR)",
-        "YouTube Spend (INR)",
-        "Facebook Ads Spend (INR)",
-        "Google Ads Spend (INR)"
+        "TV Spend",
+        "Print Spend",
+        "Outdoor Spend",
+        "Cinema Spend",
+        "YouTube Spend",
+        "FacebookAds Spend",
+        "GoogleAds Spend",
+        "Programmatic Spend",
+        "RegionalPrint Spend",
+        "RegionalOutdoor Spend",
+        "RegionalDigital Spend",
+        "RegionalRadio Spend",
+        "GroundActivation Spend"
     ]
 
-    # Match those columns with what's in the uploaded CSV
+    # Pick only those present in the file
     media_cols = [col for col in expected_media_cols if col in df.columns]
     target = "revenue"
 
-    # Check for required columns
     if not media_cols:
-        st.error("❌ No media spend columns found. Please check column names in your file.")
+        st.error("❌ No media spend columns found. Please check your column names.")
     elif target not in df.columns:
         st.error("❌ 'revenue' column is missing. Please add a column named exactly 'revenue'.")
     else:
         try:
-            # ✅ DEBUGGING: Show selected columns
+            # ✅ Debugging Inputs
             st.write("✅ Media columns being used:", media_cols)
             st.write("✅ Target column:", target)
 
-            # Prepare input data
             X = df[media_cols]
             y = df[target]
-
             st.write("✅ Shape of X (media input):", X.shape)
             st.write("✅ Shape of y (target):", y.shape)
 
             if X.empty or y.empty:
-                st.error("❌ Input data is empty. Check if your media or revenue columns have missing values or incorrect names.")
+                st.error("❌ Input data is empty. Check your CSV values.")
             else:
-                # Run the MMM model
                 results = run_meridian_model(df, media_cols, target)
                 st.subheader("📈 MMM Results Table")
                 st.dataframe(results)
