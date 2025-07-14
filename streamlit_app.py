@@ -13,11 +13,11 @@ if uploaded_file is not None:
     st.success("✅ File Uploaded Successfully")
     st.dataframe(df.head())
 
-    # ✅ Column Debug
+    # Show actual columns
     st.write("📂 Columns in uploaded file:")
     st.write(df.columns.tolist())
 
-    # ✅ Corrected media spend columns based on actual file
+    # Expected media spend columns from your file
     expected_media_cols = [
         "TV Spend",
         "Print Spend",
@@ -34,7 +34,6 @@ if uploaded_file is not None:
         "GroundActivation Spend"
     ]
 
-    # Pick only those present in the file
     media_cols = [col for col in expected_media_cols if col in df.columns]
     target = "revenue"
 
@@ -44,7 +43,7 @@ if uploaded_file is not None:
         st.error("❌ 'revenue' column is missing. Please add a column named exactly 'revenue'.")
     else:
         try:
-            # ✅ Debugging Inputs
+            # Debugging display
             st.write("✅ Media columns being used:", media_cols)
             st.write("✅ Target column:", target)
 
@@ -59,6 +58,37 @@ if uploaded_file is not None:
                 results = run_meridian_model(df, media_cols, target)
                 st.subheader("📈 MMM Results Table")
                 st.dataframe(results)
+
+                # 🧠 Automated Analysis & Recommendation
+                st.subheader("🧠 Insights & Recommendations")
+
+                # Sort by ROI and Contribution
+                top_roi = results.sort_values(by="estimated_roi", ascending=False)
+                top_contribution = results.sort_values(by="normalized_contribution", ascending=False)
+
+                # Best and worst channels
+                best_channel = top_roi.iloc[0]['media_channel']
+                best_roi = top_roi.iloc[0]['estimated_roi']
+                worst_channel = top_roi.iloc[-1]['media_channel']
+                worst_roi = top_roi.iloc[-1]['estimated_roi']
+
+                # Low ROI & high contribution
+                low_roi_channels = results[results["estimated_roi"] < 1]
+                high_contribution_channels = results[results["normalized_contribution"] > 0.15]
+
+                # Generate summary
+                st.markdown(f"""
+                - ✅ **Most efficient channel:** `{best_channel}` with ROI of **{best_roi:.2f}**
+                - 🚫 **Least efficient channel:** `{worst_channel}` with ROI of **{worst_roi:.2f}**
+                - 🔍 **Low ROI channels:** {", ".join(low_roi_channels["media_channel"].tolist()) if not low_roi_channels.empty else "None"}
+                - 🔝 **Top contribution channels (>15%)**: {", ".join(high_contribution_channels["media_channel"].tolist()) if not high_contribution_channels.empty else "None"}
+                """)
+
+                st.info(f"""
+                📌 **Recommendation:**
+                Consider reallocating budget from `{worst_channel}` to `{best_channel}` or other high-performing channels.
+                Monitor low ROI channels and adjust investment accordingly.
+                """)
 
                 # 📊 Chart 1: Normalized Contribution
                 st.subheader("📊 Normalized Contribution by Media Channel")
